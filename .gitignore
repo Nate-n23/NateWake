@@ -1,0 +1,9 @@
+.venv/
+.buildozer/
+__pycache__/
+*.pyc
+*.pyo
+*.db
+bin/
+*.spec.bak
+.kivy/
