@@ -1,0 +1,59 @@
+name: Build NateWake APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache Buildozer components
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.buildozer/android/platform/android-sdk
+            ~/.buildozer/android/platform/android-ndk-r25b
+            ~/.buildozer/android/platform/python-for-android
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: Install APT dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libltdl-dev libffi-dev libssl-dev python3-dev \
+            zip unzip git openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libtinfo5 cmake libstdc++6
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer cython setuptools virtualenv
+
+      - name: Build Android APK
+        run: buildozer android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: natewake-apk
+          path: bin/*.apk
+
+      - name: Show Buildozer logs on failure
+        if: failure()
+        run: |
+          echo "Build failed. Re-running with log_level = 2 to display detailed logs..."
+          # Temporary modification of the spec file to get level 2 logs during inspection,
+          # respecting the requirement not to modify the actual file for the main build.
+          sed -i.bak 's/log_level = 1/log_level = 2/g' buildozer.spec
+          buildozer android debug || true
+          mv buildozer.spec.bak buildozer.spec
