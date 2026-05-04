@@ -19,9 +19,6 @@ android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,MANAGE_EXTERN
 # API levels
 android.api = 33
 android.minapi = 26
-android.sdk_path = /usr/local/lib/android/sdk
-android.ndk_path = /usr/local/lib/android/sdk/ndk/27.3.13750724
-android.ndk_version = 27.3.13750724
 
 # Architectures
 android.archs = arm64-v8a, armeabi-v7a

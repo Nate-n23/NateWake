@@ -6,51 +6,19 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install APT dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libltdl-dev libffi-dev \
-            libssl-dev python3-dev zip unzip git openjdk-17-jdk \
-            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
-            libncursesw5-dev libtinfo5 cmake libstdc++6
-
-      - name: Install Python dependencies
-        run: pip install buildozer cython setuptools
-
-      - name: Setup Android SDK
-        run: |
-          SDKMANAGER=/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager
-          mkdir -p /usr/local/lib/android/sdk/licenses
-          printf "24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e" \
-            > /usr/local/lib/android/sdk/licenses/android-sdk-license
-          printf "84831b9409646a918e30573bab4c9c91346d8abd" \
-            > /usr/local/lib/android/sdk/licenses/android-sdk-preview-license
-          yes | $SDKMANAGER --licenses || true
-          yes | $SDKMANAGER "build-tools;33.0.2" "platforms;android-33" || true
-
       - name: Build APK
-        env:
-          ANDROIDSDK: /usr/local/lib/android/sdk
-          ANDROIDNDK: /usr/local/lib/android/sdk/ndk/27.3.13750724
-          ANDROIDAPI: "33"
-          ANDROIDMINAPI: "26"
-        run: buildozer android debug
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: natewake-apk
-          path: bin/*.apk
-
-      - name: Show logs on failure
-        if: failure()
-        run: |
-          find . -name "*.log" | xargs cat 2>/dev/null || true
+          path: ${{ steps.buildozer.outputs.filename }}
