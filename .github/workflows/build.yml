@@ -12,17 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Accept SDK licenses
+      - name: Find SDK and accept licenses
         run: |
-          SDK=$(find /home /root /opt -name "sdkmanager" 2>/dev/null | head -1)
-          SDK_DIR=$(dirname $(dirname $SDK))
-          mkdir -p $SDK_DIR/licenses
-          printf "24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e\n8933bad161af4178b1185d1a37fbf41ea5269c55\n" > $SDK_DIR/licenses/android-sdk-license
-          printf "84831b9409646a918e30573bab4c9c91346d8abd\n" > $SDK_DIR/licenses/android-sdk-preview-license
-          printf "33b6a2b64607f11b759f320ef9dff4ae5c47d97a\n" > $SDK_DIR/licenses/google-gdk-license
-          yes | $SDK --licenses 2>/dev/null || true
-          yes | $SDK "build-tools;33.0.2" 2>/dev/null || true
-          echo "SDK_DIR=$SDK_DIR" >> $GITHUB_ENV
+          # Trouver sdkmanager partout
+          SDK=$(find / -name "sdkmanager" 2>/dev/null | grep -v "\.buildozer" | head -1)
+          echo "sdkmanager found at: $SDK"
+          
+          if [ -z "$SDK" ]; then
+            echo "sdkmanager not found, skipping"
+            exit 0
+          fi
+          
+          SDK_DIR=$(dirname $(dirname "$SDK"))
+          echo "SDK_DIR: $SDK_DIR"
+          
+          mkdir -p "$SDK_DIR/licenses"
+          printf "24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e\n8933bad161af4178b1185d1a37fbf41ea5269c55\n" > "$SDK_DIR/licenses/android-sdk-license"
+          printf "84831b9409646a918e30573bab4c9c91346d8abd\n" > "$SDK_DIR/licenses/android-sdk-preview-license"
+          yes | "$SDK" --licenses 2>/dev/null || true
+          yes | "$SDK" "build-tools;33.0.2" 2>/dev/null || true
 
       - name: Install Python deps
         run: pip install pandas numpy scikit-learn scipy joblib
